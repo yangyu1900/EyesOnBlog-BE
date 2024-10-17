@@ -146,8 +146,6 @@ module.exports.find = async function (subject, conditions, options) {
 	if (orderByStr.length > 0) queryStr += ` ${orderByStr}`;
 	if (limitStr.length > 0) queryStr += ` ${limitStr}`;
 
-	console.log(queryStr);
-
 	const result = await query(queryStr).catch(err => { console.log(err); });
 
 	return result ? result : [];
