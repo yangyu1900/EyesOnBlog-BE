@@ -6,83 +6,81 @@ const draftService = require('./draft-service');
 const blogService = require('./blog-service');
 
 module.exports.syncStats = async function (pod) {
-    console.log(`syncing at ${new Date().toISOString()}`)
-    var pageNum = 1;
-    var baseUrl = process.env['BLOG_BASE_URL'];
+    console.log(`syncing at ${new Date().toISOString()}`);
 
-    while (true) {
-        const option = {
-            method: 'GET',
-            uri: pageNum == 1 ? pod.blogChannelUrl : pod.blogChannelUrl + '/page/' + pageNum,
-            resolveWithFullResponse: true
-        }
-        const response = await rp(option);
-        if (response.request.href.endsWith('/page/' + (pageNum - 1)))
-            return;
+    const baseUrl= process.env['BLOG_BASE_URL'];
+    const option = {
+        method: 'GET',
+        uri: pod.blogChannelUrl,
+        resolveWithFullResponse: true
+    }
+    const response = await rp(option);
 
-        const dom = new JSDOM(`${response.body}`);
-        const blogElements = dom.window.document.getElementsByClassName('lia-quilt-column-main');
+    const virtualConsole = new jsdom.VirtualConsole();
+    const dom = new JSDOM(`${response.body}`, { virtualConsole });
 
-        for (let blogElement of blogElements) {
-            const authorDetailsElement = blogElement.getElementsByClassName('lia-quilt-column-alley-single')[0].getElementsByClassName('author-details')[0];
-            const authorName = authorDetailsElement.getElementsByTagName('a')[0].textContent;
-            const authorLinkArr = authorDetailsElement.getElementsByTagName('a')[0].getAttribute('href').split('/');
-            const authorId = Number.parseInt(authorLinkArr[authorLinkArr.length - 1]);
+    const blogElements = dom.window.document.getElementsByClassName('MessageViewCard_lia-message__6_xUN');
 
-            const publishDateStr = authorDetailsElement.getElementsByClassName('post-time-text')[1].textContent;
-            const publishDate = new Date(Date.parse(publishDateStr)).toISOString();
+    for (let blogElement of blogElements) {
+        const titleElement = blogElement.getElementsByClassName('MessageViewCard_lia-subject-link__OhaPD')[0];
+        const title = titleElement.getAttribute('aria-label');
+        const blogUrl = baseUrl + titleElement.getAttribute('href');
+        const blogId = Number.parseInt(blogUrl.split('/').at(-1));
 
-            try {
+        const authorElement = blogElement.getElementsByClassName('MessageViewCard_lia-byline-item__5soD1')[0];
+        const authorLinkArr = authorElement.getAttribute('href').split('/');
+        const authorName = authorLinkArr.at(-2);
+        const authorId = Number.parseInt(authorLinkArr.at(-1));
 
-                const pageLinkElement = blogElement.getElementsByClassName('page-link')[0];
-                const pageviewElement = blogElement.getElementsByClassName('views')[0];
-                const blogUrl = baseUrl + pageLinkElement.getAttribute('href');
-                const blogLinkArr = blogUrl.split('/');
-                const title = blogLinkArr[blogLinkArr.length - 3].replaceAll('-', ' ');
-                const blogId = Number.parseInt(blogLinkArr[blogLinkArr.length - 1]);
-                const pageview = pageviewElement.getElementsByTagName('span')[0].textContent.indexOf('K') > -1 ? Number.parseFloat(pageviewElement.getElementsByTagName('span')[0].textContent.replace('K', '')) * 1000 : Number.parseInt(pageviewElement.getElementsByTagName('span')[0].textContent.replace(',', ''));
+        const publishDateElement = blogElement.getElementsByClassName('MessageViewCard_lia-timestamp__pG_bu')[0].getElementsByTagName('span')[0].getElementsByTagName('span')[0];
+        const publishDateStr = publishDateElement.getAttribute('title').replace('at', ',');
+        const publishDate = new Date(Date.parse(publishDateStr)).toISOString();
 
-                const userSet = await userService.getUser({ 'filterBy': 'userId', 'filterByValue': `${authorId}` });
+        const pageviewElement = blogElement.getElementsByClassName('styles_lia-g-count-wrap___e35P')[0];
+        const pageview = pageviewElement.textContent.indexOf('K') > -1 ? Number.parseFloat(pageviewElement.textContent.replace('K', '')) * 1000 : Number.parseInt(pageviewElement.textContent.replace(',', ''));
 
-                const user = userSet.length > 0 ? userSet[0] : {
-                    userId: authorId,
-                    userName: authorName,
-                    podId: pod.podId,
-                    podName: pod.podName,
-                    roles: 'author',
-                    reviewCount: 0,
-                };
+        try {
+            const userSet = await userService.getUser({ 'filterBy': 'userId', 'filterByValue': `${authorId}` });
 
-                if (userSet.length == 0) await userService.saveUser(user);
+            const user = userSet.length > 0 ? userSet[0] : {
+                userId: authorId,
+                userName: authorName,
+                podId: pod.podId,
+                podName: pod.podName,
+                roles: 'author',
+                reviewCount: 0,
+            };
 
-                const draftSet = await draftService.getDraft({ 'filterBy': 'title', 'filterByValue': `'${title}'` });
-                const draft = draftSet.length > 0 ? draftSet[0] : { title: title };
+            if (userSet.length == 0) await userService.saveUser(user);
 
-                const verticals = pod.verticals.split(',');
+            const draftSet = await draftService.getDraft({ 'filterBy': 'title', 'filterByValue': `'${title}'` });
+            const draft = draftSet.length > 0 ? draftSet[0] : { title: title };
 
-                const gptRequestOption = {
-                    method: 'POST',
-                    uri: process.env['GPT_ENDPOINT'],
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify([{
-                        role: 'user',
-                        content: `Given a blog of ${pod.podName} is titled '${title}' and ${pod.podName} has ${verticals.length} verticals, ${pod.verticals}, pick 1 of above ${verticals.length} verticals that best categorizes the blog? Give me minimum required answer.`
-                    }]),
-                    resolveWithFullResponse: true
-                };
-                const answer = await rp(gptRequestOption).catch(err => { console.log(err); });
+            const verticals = pod.verticals.split(',');        
 
-                const blogSet = await blogService.getBlog({ 'filterBy': 'blogId', 'filterByValue': `${blogId}` });
-                var vertical = blogSet.length > 0 ? blogSet[0]['vertical'] : undefined;
+            const blogSet = await blogService.getBlog({ 'filterBy': 'blogId', 'filterByValue': `${blogId}` });
+            var vertical = blogSet.length > 0 ? blogSet[0]['vertical'] : undefined;
 
-                if (!(blogSet.length > 0 && blogSet[0]['vertical'])) {
-                    if (draft['vertical']) {
-                        vertical = draft['vertical'];
-                    } else if (user['verticals']) {
-                        vertical = user['verticals'].split(',')[0];
-                    } else if (answer['statusCode'] == 200) {
+            if (!(blogSet.length > 0 && blogSet[0]['vertical'])) {
+                if (draft['vertical']) {
+                    vertical = draft['vertical'];
+                } else if (user['verticals']) {
+                    vertical = user['verticals'].split(',')[0];
+                } else {
+                    const gptRequestOption = {
+                        method: 'POST',
+                        uri: process.env['GPT_ENDPOINT'],
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify([{
+                            role: 'user',
+                            content: `Given a blog of ${pod.podName} is titled '${title}' and ${pod.podName} has ${verticals.length} verticals, ${pod.verticals}, pick 1 of above ${verticals.length} verticals that best categorizes the blog? Give me minimum required answer.`
+                        }]),
+                        resolveWithFullResponse: true
+                    };
+                    const answer = await rp(gptRequestOption).catch(err => { console.log(err); });
+                    if (answer['statusCode'] == 200) {
                         const ans = JSON.parse(answer['body'])['content'];
                         for (const v of verticals) {
                             if (ans.toLowerCase().indexOf(v.toLowerCase()) > -1) {
@@ -97,26 +95,25 @@ module.exports.syncStats = async function (pod) {
                         }
                     }
                 }
-                const blog = {
-                    blogId: blogId,
-                    title: title,
-                    url: blogUrl,
-                    publishDate: publishDate,
-                    pageview: pageview,
-                    podId: pod.podId,
-                    podName: pod.podName,
-                    vertical: vertical,
-                    authorId: authorId,
-                    authorName: authorName
-                }
-                await blogService.saveOrUpdateBlog(blog);
-            } catch (error) {
-                console.log(option.uri);
-                console.log(authorName);
-                console.log(authorId);
-                console.log(error);
             }
+            const blog = {
+                blogId: blogId,
+                title: title,
+                url: blogUrl,
+                publishDate: publishDate,
+                pageview: pageview,
+                podId: pod.podId,
+                podName: pod.podName,
+                vertical: vertical,
+                authorId: authorId,
+                authorName: authorName
+            }
+            await blogService.saveOrUpdateBlog(blog);
+        } catch (error) {
+            console.log(option.uri);
+            console.log(authorName);
+            console.log(authorId);
+            console.log(error);
         }
-        pageNum++;
     }
 }
