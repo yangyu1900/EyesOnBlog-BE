@@ -29,7 +29,7 @@ module.exports.syncStats = async function (pod) {
 
         const authorElement = blogElement.getElementsByClassName('MessageViewCard_lia-byline-item__5soD1')[0];
         const authorLinkArr = authorElement.getAttribute('href').split('/');
-        const authorName = authorLinkArr.at(-2);
+        const authorName = decodeURI(authorLinkArr.at(-2));
         const authorId = Number.parseInt(authorLinkArr.at(-1));
 
         const publishDateElement = blogElement.getElementsByClassName('MessageViewCard_lia-timestamp__pG_bu')[0].getElementsByTagName('span')[0].getElementsByTagName('span')[0];
