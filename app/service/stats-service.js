@@ -51,7 +51,7 @@ module.exports.syncStats = async function (pod) {
                 reviewCount: 0,
             };
 
-            if (userSet.length == 0) await userService.saveUser(user);
+            if (userSet.length === 0) await userService.saveUser(user);
 
             const draftSet = await draftService.getDraft({ 'filterBy': 'title', 'filterByValue': `'${title}'` });
             const draft = draftSet.length > 0 ? draftSet[0] : { title: title };
@@ -80,7 +80,7 @@ module.exports.syncStats = async function (pod) {
                         resolveWithFullResponse: true
                     };
                     const answer = await rp(gptRequestOption).catch(err => { console.log(err); });
-                    if (answer['statusCode'] == 200) {
+                    if (answer['statusCode'] === 200) {
                         const ans = JSON.parse(answer['body'])['content'];
                         for (const v of verticals) {
                             if (ans.toLowerCase().indexOf(v.toLowerCase()) > -1) {

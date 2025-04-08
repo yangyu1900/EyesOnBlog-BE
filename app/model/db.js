@@ -28,7 +28,7 @@ module.exports.upsertOne = async function (tableName, doc) {
 	var valStr = 'VALUES (';
 	Object.keys(doc).forEach((key, index) => {
 		var val = doc[key];
-		if (val != undefined) {
+		if (val !== undefined) {
 			keyStr += index < numOfKeys - 1 ? ` ${key},` : ` ${key} )`;
 			valStr += index < numOfKeys - 1 ? `"${val}",` : ` "${val}")`;
 		}
@@ -56,58 +56,58 @@ module.exports.find = async function (subject, conditions, options) {
 
 	if (conditions && Object.keys(conditions).length > 0) {
 		whereStr += 'WHERE';
-		if (conditions['equals'] && conditions['equals'].length != 0) {
+		if (conditions['equals'] && conditions['equals'].length !== 0) {
 			if (whereStr.length > 5) whereStr += ' AND';
 			conditions['equals'].forEach((condition, index) => {
 				const key = Object.keys(condition)[0];
 				const val = condition[key];
-				whereStr += index == 0 ? ` ${key}=${val}` : ` AND ${key}=${val}`;
+				whereStr += index === 0 ? ` ${key}=${val}` : ` AND ${key}=${val}`;
 			});
 		}
-		if (conditions['contains'] && conditions['contains'].length != 0) {
+		if (conditions['contains'] && conditions['contains'].length !== 0) {
 			if (whereStr.length > 5) whereStr += ' AND';
 			conditions['contains'].forEach((condition, index) => {
 				const key = Object.keys(condition)[0];
 				const val = condition[key];
 				const subKeys = key.split(',');
 				const numOfSubKeys = subKeys.length;
-				if (numOfSubKeys == 1) {
-					whereStr += index == 0 ? ` ${key} LIKE "%${val}%"` : ` AND ${key} LIKE "%${val}%"`;
+				if (numOfSubKeys === 1) {
+					whereStr += index === 0 ? ` ${key} LIKE "%${val}%"` : ` AND ${key} LIKE "%${val}%"`;
 				} else {
-					whereStr += index == 0 ? ' (' : ' AND (';
+					whereStr += index === 0 ? ' (' : ' AND (';
 					subKeys.forEach(
 						(subKey, i) => {
-							whereStr += i == 0 ? `${subKey} LIKE "%${val}%"` : ` OR ${subKey} LIKE "%${val}%"`;
+							whereStr += i === 0 ? `${subKey} LIKE "%${val}%"` : ` OR ${subKey} LIKE "%${val}%"`;
 						}
 					);
 					whereStr += ')';
 				}
 			});
 		}
-		if (conditions['greaterThans'] && conditions['greaterThans'].length != 0) {
+		if (conditions['greaterThans'] && conditions['greaterThans'].length !== 0) {
 			if (whereStr.length > 5) whereStr += ' AND';
 			conditions['greaterThans'].forEach((condition, index) => {
 				const key = Object.keys(condition)[0];
 				const val = condition[key];
-				whereStr += index == 0 ? ` ${key}>'${val}'` : ` AND ${key}>'${val}'`;
+				whereStr += index === 0 ? ` ${key}>'${val}'` : ` AND ${key}>'${val}'`;
 			});
 		}
-		if (conditions['lessThans'] && conditions['lessThans'].length != 0) {
+		if (conditions['lessThans'] && conditions['lessThans'].length !== 0) {
 			if (whereStr.length > 5) whereStr += ' AND';
 			conditions['lessThans'].forEach((condition, index) => {
 				const key = Object.keys(condition)[0];
 				const val = condition[key];
-				whereStr += index == 0 ? ` ${key}<'${val}'` : ` AND ${key}<'${val}'`;
+				whereStr += index === 0 ? ` ${key}<'${val}'` : ` AND ${key}<'${val}'`;
 			});
 		}
 
-		if (conditions['groupBys'] && conditions['groupBys'].length != 0 && conditions['groupByUnits'] && conditions['groupByUnits'].length != 0) {
+		if (conditions['groupBys'] && conditions['groupBys'].length !== 0 && conditions['groupByUnits'] && conditions['groupByUnits'].length !== 0) {
 			groupByStr += 'GROUP BY';
 			conditions['groupBys'].forEach((groupBy, index) => {
 				whereStr += whereStr.length > 5 ? ` AND ${groupBy} IS NOT NULL` : ` ${groupBy} IS NOT NULL`;
 				conditions['groupByUnits'][index].split(',').forEach(
 					(groupByUnit) => {
-						if (groupByUnit.length == 0) {
+						if (groupByUnit.length === 0) {
 							metric = `${metric}, ${groupBy}`;
 							groupByStr += groupByStr.length > 8 ? `, ${groupBy}` : ` ${groupBy}`;
 						} else {
@@ -125,8 +125,8 @@ module.exports.find = async function (subject, conditions, options) {
 			orderByStr += 'ORDER BY';
 			const numOfOrderBys = Object.keys(options['sort']).length;
 			Object.keys(options['sort']).forEach((key, index) => {
-				var val = options['sort'][key] == 1 ? 'ASC' : 'DESC';
-				orderByStr += index == numOfOrderBys - 1 ? ` ${key} ${val}` : ` ${key} ${val},`;
+				var val = options['sort'][key] === 1 ? 'ASC' : 'DESC';
+				orderByStr += index === numOfOrderBys - 1 ? ` ${key} ${val}` : ` ${key} ${val},`;
 			});
 		}
 
