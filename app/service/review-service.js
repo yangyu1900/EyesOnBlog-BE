@@ -23,7 +23,7 @@ module.exports.getReviewer = async function (draft) {
     const result = [];
     const users = await userService.getUser({ 'filterBy': ['podId', 'verticals'], 'filterByValue': [`${draft.podId}`, `'${draft.vertical}'`], 'orderBy': 'reviewCount', 'orderByOrder': '-1', 'limit': '2' });
     users.forEach((user) => {
-        if (user.userId != draft.authorId) result.push(user);
+        if (user.userId !== draft.authorId) result.push(user);
     });
     return result;
 }

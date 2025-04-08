@@ -3,8 +3,8 @@ module.exports.parseQuery = function (tableName, queryStr) {
 
     const subject = {};
     subject['tableName'] = tableName;
-    if (queryStr['metric'] && queryStr['metric'].length != 0) subject['metric'] = queryStr['metric'];
-    if (queryStr['aggregation'] && queryStr['aggregation'].length != 0) subject['aggregation'] = queryStr['aggregation'];
+    if (queryStr['metric'] && queryStr['metric'].length !== 0) subject['metric'] = queryStr['metric'];
+    if (queryStr['aggregation'] && queryStr['aggregation'].length !== 0) subject['aggregation'] = queryStr['aggregation'];
 
     const conditions = {};
     if (queryStr['filterBy'] && queryStr['filterByValue']) {
@@ -15,16 +15,16 @@ module.exports.parseQuery = function (tableName, queryStr) {
 
         const filterBy = queryStr['filterBy'];
         var filterBys = [];
-        if (typeof (filterBy) == 'string') filterBys.push(filterBy); else if (filterBy) filterBys = filterBy;
+        if (typeof (filterBy) === 'string') filterBys.push(filterBy); else if (filterBy) filterBys = filterBy;
         const filterByValue = queryStr['filterByValue'];
         var filterByValues = [];
-        if (typeof (filterByValue) == 'string') filterByValues.push(filterByValue); else if (filterByValue) filterByValues = filterByValue;
+        if (typeof (filterByValue) === 'string') filterByValues.push(filterByValue); else if (filterByValue) filterByValues = filterByValue;
 
         filterBys.forEach((fb, index) => {
             const fbv = filterByValues[index];
             const fbvArr = fbv.split(',');
             const numOfValues = fbvArr.length;
-            if (numOfValues == 1) {
+            if (numOfValues === 1) {
                 if (fbv.indexOf('\'') > -1) {
                     const contain = {};
                     contain[fb] = fbv.replaceAll('\'', '');
@@ -56,19 +56,19 @@ module.exports.parseQuery = function (tableName, queryStr) {
     if (queryStr['groupBy']) {
         conditions['groupBys'] = [];
         const groupBy = queryStr['groupBy'];
-        if (typeof (groupBy) == 'string') conditions['groupBys'].push(groupBy); else if (groupBy) conditions['groupBys'] = groupBy;
+        if (typeof (groupBy) === 'string') conditions['groupBys'].push(groupBy); else if (groupBy) conditions['groupBys'] = groupBy;
         conditions['groupByUnits'] = [];
         const groupByUnits = queryStr['groupByUnit'];
-        if (typeof (groupByUnits) == 'string') conditions['groupByUnits'].push(groupByUnits); else if (groupByUnits) conditions['groupByUnits'] = groupByUnits;
+        if (typeof (groupByUnits) === 'string') conditions['groupByUnits'].push(groupByUnits); else if (groupByUnits) conditions['groupByUnits'] = groupByUnits;
     }
 
     const options = {};
     if (queryStr['orderBy'] && queryStr['orderByOrder']) {
         options['sort'] = {};
         var orderBys =  [];
-        typeof(queryStr['orderBy']) == 'string' ? orderBys.push(queryStr['orderBy']) : orderBys = queryStr['orderBy'];
+        typeof(queryStr['orderBy']) === 'string' ? orderBys.push(queryStr['orderBy']) : orderBys = queryStr['orderBy'];
         var orderByOrders = [];
-        typeof(queryStr['orderByOrder']) == 'string' ? orderByOrders.push(queryStr['orderByOrder']) : orderByOrders=queryStr['orderByOrder'];
+        typeof(queryStr['orderByOrder']) === 'string' ? orderByOrders.push(queryStr['orderByOrder']) : orderByOrders=queryStr['orderByOrder'];
         orderBys.forEach((orderBy, index) => options.sort[orderBy] = Number.parseInt(orderByOrders[index]));
     }
 
